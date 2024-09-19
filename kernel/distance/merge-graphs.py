@@ -5,6 +5,7 @@ import networkx as nx
 from pathlib import Path
 import argparse
 import pickle
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 def find_dot_files(directory, cfg_opt):
     """
@@ -30,33 +31,46 @@ def load_dot_file(dot_file):
     """
     Load a .dot file and return it as a networkx graph.
     """
-    return nx.drawing.nx_pydot.read_dot(dot_file)
+    try:
+        graph = nx.drawing.nx_pydot.read_dot(dot_file)
+        if not isinstance(graph, (nx.Graph, nx.DiGraph, nx.MultiDiGraph)):
+            raise ValueError("Loaded object is not a valid networkx graph.")
+        return graph
+    except Exception as e:
+        print(f"Error loading {dot_file}: {e}")
+        return None
+
 
 def process_dot_files(dot_files):
     """
-    Process the specified list of .dot files sequentially.
+    Process the specified list of .dot files and merge them into a single graph.
+    If the graph is a MultiDiGraph, use compose_all.
     """
-    graphs = []
+    graph_list = []
 
     for dot_file in dot_files:
-        try:
-            graph = load_dot_file(dot_file)
-            if graph is not None:
-                print(f"Loaded .dot file: {dot_file}")
-                graphs.append(graph)
-        except Exception as e:
-            print(f"Error loading {dot_file}: {e}")
+        graph = load_dot_file(dot_file)
+        if graph is not None:
+            print(f"Loaded .dot file: {dot_file}")
+            graph_list.append(graph)
 
-    return graphs
+    # Check if any of the graphs are MultiDiGraph
+    if any(isinstance(g, nx.MultiDiGraph) for g in graph_list):
+        merged_graph = nx.compose_all(graph_list)  # Merge MultiDiGraph
+    else:
+        merged_graph = nx.DiGraph()  # Initialize an empty directed graph
+        for g in graph_list:
+            merged_graph = nx.compose(merged_graph, g)  # Merge DiGraphs
 
+    return merged_graph  # Return the merged graph
 
-def save_graphs_to_pickle(graphs, output_file):
+def save_graph_to_pickle(graph, output_file):
     """
-    Save the list of graphs as a single pickle file.
+    Save the merged graph as a pickle file.
     """
     with open(output_file, 'wb') as f:
-        pickle.dump(graphs, f)
-    print(f"All graphs saved to {output_file}")
+        pickle.dump(graph, f)
+    print(f"Merged graph saved to {output_file}")
 
 def main():
     # Process command-line arguments with argparse
@@ -76,14 +90,14 @@ def main():
 
     # Process .dot files
     dot_files = find_dot_files(directory, args.cfg)
-    graphs = process_dot_files(dot_files)
+    merged_graph = process_dot_files(dot_files)
 
     if args.cfg:
-        filename = f"{args.output_directory}/cfg-graphs.pickle"
+        filename = f"{args.output_directory}/cfg-graph.pickle"
     else:
-        filename = f"{args.output_directory}/cg-graphs.pickle"
+        filename = f"{args.output_directory}/cg-graph.pickle"
 
-    save_graphs_to_pickle(graphs, filename)
+    save_graph_to_pickle(merged_graph, filename)
 
 if __name__ == "__main__":
     main()
