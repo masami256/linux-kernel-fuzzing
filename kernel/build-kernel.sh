@@ -107,7 +107,7 @@ echo "${dirs}" | xargs -n 1 -P 4 bash -c '
     dotfiles=$(find "${d}" -maxdepth 1 -name "*.bc")
     for df in ${dotfiles}; do
         echo "Analyzing: ${df}"
-        opt -passes=dot-callgraph,dot-cfg ${df}
+        "${LKF_LLVM_INSTALL_DIR}"/bin/opt -passes=dot-callgraph,dot-cfg ${df}
     done
 ' 
 

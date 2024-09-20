@@ -33,6 +33,7 @@ def load_dot_file(dot_file):
     """
     try:
         graph = nx.drawing.nx_pydot.read_dot(dot_file)
+        print(f"Loaded: {dot_file}")
         if not isinstance(graph, (nx.Graph, nx.DiGraph, nx.MultiDiGraph)):
             raise ValueError("Loaded object is not a valid networkx graph.")
         return graph
