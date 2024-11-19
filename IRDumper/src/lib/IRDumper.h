@@ -13,7 +13,6 @@
 #include "llvm/IR/InlineAsm.h"
 #include "llvm/IR/Instruction.h"
 #include "llvm/IR/Instructions.h"
-#include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Type.h"
 //#include "llvm/IR/TypeBuilder.h"  //NOTE: If I include this line, compilation will fail.
@@ -32,19 +31,6 @@
 using namespace llvm;
 using namespace std;
 
-// This is legacy pass manager; must provide clang flag '-flegacy-pass-manager'
-class LegacyIRDumper : public ModulePass {
-
-public:
-	static char ID;
-
-	LegacyIRDumper() : ModulePass(ID) {}
-
-	virtual bool runOnModule(Module &M);
-};
-
-// FIXME: the following does not work with the new pass manager.
-// Refer to https://llvm.org/docs/NewPassManager.html
 class IRDumper : public PassInfoMixin<IRDumper> {
 
 public:
