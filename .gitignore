@@ -1,2 +1,3 @@
 work/
-*.picklelinux-kernel-fuzzing.code-workspace
+*.pickle
+linux-kernel-fuzzing.code-workspace
