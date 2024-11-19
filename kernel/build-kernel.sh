@@ -1,115 +1,54 @@
 #!/bin/bash
 
-
-if [ $# != 1 ]; then
-    echo "[*]usage $0 <linux kernel directory>"
+if [ $# -lt 1 ]; then
+    echo "[*]usage $0 <linux kernel directory> <config file path>"
     exit 1
 fi
 
 source ../config.sh
 
-KERNEL_DIR=$1
+KERNEL_DIR="$1"
+CONFIG_FILE="$2"
 
-if [ -d "${LKF_LINUX_KERNEL_BUILD_ARTIFACT_DIR}" ];then
-    rm -fr "${LKF_LINUX_KERNEL_BUILD_ARTIFACT_DIR}"
-fi
-mkdir -p "${LKF_CFG_FILES_OUTPUT_DIR}"
-
-MYCC="${LKF_WORKDIR}/KernelFuzzCC"
-
-cat <<'EOF' > "${MYCC}"
-#!/bin/sh
-
-CLANG="${LKF_LLVM_INSTALL_DIR}/bin/clang"
-
-if [ ! -e $CLANG ]; then
-    exit
-fi
-
-input=""
-if [ ! -t 0 ]; then
-    input=$(cat)
-fi
-
-OFILE=`echo $* | sed -e 's/^.* \(.*\.o\) .*$/\\1/'`
-if [ "x$OFILE" != x -a "$OFILE" != "$*" ] ; then
-    if [ -z "${input}" ]; then
-        $CLANG -emit-llvm -g "$@" >/dev/null 2>&1 > /dev/null
-    else
-        echo "${input}" | $CLANG -emit-llvm -g "$@" >/dev/null 2>&1 > /dev/null
-    fi
-    if [ -f "$OFILE" ] ; then
-        BCFILE=`echo $OFILE | sed -e 's/o$/bc/'`
-        #file $OFILE | grep -q "LLVM IR bitcode" && mv $OFILE $BCFILE || true
-        if [ `file $OFILE | grep -c "LLVM IR bitcode"` -eq 1 ]; then
-            mv $OFILE $BCFILE
-        else
-            touch $BCFILE
-        fi
-    fi
-fi
-
-if [ -z "${input}" ]; then
-    exec $CLANG "$@"
-else
-    echo "$input" | exec $CLANG "$@"
-fi  
-EOF
-
-chmod 755 "${MYCC}"
-
+echo "clang is ${LKF_CLANG}"
 cd "${KERNEL_DIR}"
 
-orig_cfg_files=$(find . -name "*.cfg")
+make LLVM=1 CC="${LKF_CLANG}" clean
+make LLVM=1 CC="${LKF_CLANG}" mrproper
 
-make LLVM=1 CC="${MYCC}" clean
-make LLVM=1 CC="${MYCC}" mrproper
+git ls-files --others --exclude-standard | xargs rm -f
+git checkout Makefile
+cp Makefile Makefile.bak
 
-make LLVM=1 CC="${MYCC}" O="${LKF_LINUX_KERNEL_BUILD_ARTIFACT_DIR}" defconfig
-make LLVM=1 CC="${MYCC}" O="${LKF_LINUX_KERNEL_BUILD_ARTIFACT_DIR}" kvm_guest.config
+MY_KBUILD_USERCFLAGS="-Wno-error -g -Xclang -no-opaque-pointers -fpass-plugin=${IRDUMPER}"
+MY_KBUILD_CFLAGS="-Wno-error -g -Xclang -no-opaque-pointers -fpass-plugin=$IRDUMPER"
 
-./scripts/config --file "${LKF_LINUX_KERNEL_BUILD_ARTIFACT_DIR}/.config" -e KCOV
-./scripts/config --file "${LKF_LINUX_KERNEL_BUILD_ARTIFACT_DIR}/.config" -e DEBUG_INFO_DWARF4 
-./scripts/config --file "${LKF_LINUX_KERNEL_BUILD_ARTIFACT_DIR}/.config" -e KASAN
-./scripts/config --file "${LKF_LINUX_KERNEL_BUILD_ARTIFACT_DIR}/.config" -e KASAN_INLINE
-./scripts/config --file "${LKF_LINUX_KERNEL_BUILD_ARTIFACT_DIR}/.config" -e CONFIGFS_FS
-./scripts/config --file "${LKF_LINUX_KERNEL_BUILD_ARTIFACT_DIR}/.config" -e SECURITYFS
-./scripts/config --file "${LKF_LINUX_KERNEL_BUILD_ARTIFACT_DIR}/.config" -e CMDLINE_BOOL
-./scripts/config --file "${LKF_LINUX_KERNEL_BUILD_ARTIFACT_DIR}/.config" --set-val CMDLINE "net.ifnames=0"
+echo "KBUILD_USERCFLAGS += ${MY_KBUILD_USERCFLAGS}" >> Makefile
+echo "KBUILD_CFLAGS += ${MY_KBUILD_CFLAGS}" >> Makefile
 
-make LLVM=1 CC="${MYCC}" O="${LKF_LINUX_KERNEL_BUILD_ARTIFACT_DIR}" olddefconfig
+if [ "${CONFIG_FILE}" = "" ]; then
+    make LLVM=1 CC="${LKF_CLANG}" defconfig
+else
+    cp "${CONFIG_FILE}" ./.config
+    make LLVM=1 CC="${LKF_CLANG}" olddefconfig
+fi
+
+make LLVM=1 CC="${LKF_CLANG}" kvm_guest.config
+
+./scripts/config -e KCOV
+./scripts/config -e DEBUG_INFO_DWARF4 
+./scripts/config -e KASAN
+./scripts/config -e KASAN_INLINE
+./scripts/config -e KFENCE
+./scripts/config -e CONFIGFS_FS
+./scripts/config -e SECURITYFS
+./scripts/config -e CMDLINE_BOOL
+./scripts/config --set-val CMDLINE "net.ifnames=0"
+
+make LLVM=1 CC="${LKF_CLANG}" olddefconfig
 
 echo "[+]$(date) : Start build"
-make LLVM=1 CC="${MYCC}" O="${LKF_LINUX_KERNEL_BUILD_ARTIFACT_DIR}" -j$(nproc)
+make LLVM=1 CC="${LKF_CLANG}" -j$(nproc)
 echo "[+]$(date) : End build"
 
-export LKF_LINUX_KERNEL_BUILD_ARTIFACT_DIR LKF_CFG_FILES_OUTPUT_DIR
-
-echo "[+]$(date) : Start creating cfg files"
-dirs=$(find "${LKF_LINUX_KERNEL_BUILD_ARTIFACT_DIR}" -type d)
-
-echo "${dirs}" | xargs -n 1 -P 4 bash -c '
-    d="$0"
-    common_path="${d}"
-
-    while [[ "${LKF_LINUX_KERNEL_BUILD_ARTIFACT_DIR#$common_path}" == "${LKF_LINUX_KERNEL_BUILD_ARTIFACT_DIR}" ]]; do
-        common_path="${common_path%/*}"
-    done
-
-    suffix="${LKF_LINUX_KERNEL_BUILD_ARTIFACT_DIR#$common_path}"
-    workdir="${d#$common_path}"
-    workdir=$(echo ${LKF_CFG_FILES_OUTPUT_DIR}${suffix}${workdir} | sed '"'"'s://:/:g'"'"')
-    
-    mkdir -p "${workdir}"
-
-    cd "${workdir}"
-
-    dotfiles=$(find "${d}" -maxdepth 1 -name "*.bc")
-    for df in ${dotfiles}; do
-        echo "Analyzing: ${df}"
-        "${LKF_LLVM_INSTALL_DIR}"/bin/opt -passes=dot-callgraph,dot-cfg ${df}
-    done
-' 
-
-echo "[+]$(date) : End creating cfg files"
 
