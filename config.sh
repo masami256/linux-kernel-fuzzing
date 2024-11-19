@@ -11,5 +11,8 @@ LKF_CLANG="${LKF_LLVM_INSTALL_DIR}/bin/clang"
 # IRDumper
 IRDUMPER="${LKF_BASE_PATH}/IRDumper/build/lib/libDumper.so"
 
+# DeepType
+DEEPTYPE_DIR="${LKF_BASE_PATH}/DeepType"
+
 # For Linux kernel
 LKF_LINUX_KERNEL_BUILD_SCRIPT_DIR="${LKF_BASE_PATH}/kernel"

@@ -5,7 +5,7 @@ if [ $# -lt 1 ]; then
     exit 1
 fi
 
-source ../config.sh
+source $(dirname "$(realpath "${BASH_SOURCE[0]}")")/../config.sh
 
 KERNEL_DIR="$1"
 CONFIG_FILE="$2"

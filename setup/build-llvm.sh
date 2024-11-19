@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source ../config.sh
+source $(dirname "$(realpath "${BASH_SOURCE[0]}")")/../config.sh
 
 set -e
 
