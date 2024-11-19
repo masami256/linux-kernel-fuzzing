@@ -1,0 +1,3 @@
+[submodule "DeepType"]
+	path = DeepType
+	url = git@github.com:masami256/DeepType.git
