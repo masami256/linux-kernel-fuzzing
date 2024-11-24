@@ -16,3 +16,10 @@ DEEPTYPE_DIR="${LKF_BASE_PATH}/DeepType"
 
 # For Linux kernel
 LKF_LINUX_KERNEL_BUILD_SCRIPT_DIR="${LKF_BASE_PATH}/kernel"
+
+# syskaller
+SYZKALLER_DIR="${LKF_WORKDIR}/syzkaller"
+DEBIAN_IMAGE_DIR="${LKF_WORKDIR}/image"
+DEBIAN_CODENAME="bookworm"
+DEBIAN_ARCH="x86_64"
+
