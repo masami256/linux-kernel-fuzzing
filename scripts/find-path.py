@@ -4,37 +4,29 @@ import pickle
 import sys
 import networkx as nx
 
-def find_paths_memory_optimized(graph, target, max_paths=20):
-    """Find all paths leading to the target node with a path limit."""
+def find_shortest_paths(graph, target, max_paths=20):
+    """Find shortest paths leading to the target node using BFS."""
+    from collections import deque
+
     paths = []
-    stack = [(target, None)]  # Stack holds (current_node, parent_node)
-    parent_map = {}  # To reconstruct paths later
-    path_count = 0  # Counter for paths found
+    queue = deque([(target, [target])])  # Queue holds (current_node, path_to_current_node)
+    path_count = 0
 
-    while stack:
-        current, parent = stack.pop()
-        if current not in parent_map:
-            parent_map[current] = parent  # Record the parent node
+    while queue:
+        current, path = queue.popleft()
 
-            # Add predecessors to the stack, sorted by in-degree (optional priority)
-            for predecessor in sorted(graph.predecessors(current), key=lambda x: graph.in_degree(x)):
-                stack.append((predecessor, current))
-
-    # Reconstruct paths from the parent map
-    def reconstruct_path(node):
-        path = []
-        while node is not None:
-            path.append(node)
-            node = parent_map[node]
-        return path[::-1]  # Reverse the path
-
-    for node in parent_map:
-        if graph.in_degree(node) == 0:  # Source node
-            paths.append(reconstruct_path(node))
+        # If we've reached a source node, add the path
+        if graph.in_degree(current) == 0:
+            paths.append(path)  # Keep the order as target-to-source
             path_count += 1
             if path_count >= max_paths:
                 print(f"Path limit ({max_paths}) reached. Stopping exploration.")
-                return paths
+                break
+
+        # Add predecessors to the queue
+        for predecessor in graph.predecessors(current):
+            if predecessor not in path:  # Avoid cycles
+                queue.append((predecessor, path + [predecessor]))
 
     return paths
 
@@ -61,8 +53,8 @@ def main():
         print(f"Function '{target_function}' not found in the graph.")
         sys.exit(1)
 
-    # Find all paths to the target function
-    paths = find_paths_memory_optimized(call_graph, target_function)
+    # Find all shortest paths to the target function
+    paths = find_shortest_paths(call_graph, target_function)
 
     # Display the paths
     if paths:
