@@ -1,77 +1,76 @@
-#!/usr/bin/env python3
-
-import networkx as nx
-import matplotlib.pyplot as plt
-import json
-import sys
-import glob
-import os
 import pickle
+import sys
+import networkx as nx
+from collections import deque
 
-def save_graph(graph, output_path_pickle):
-    """Save the graph in Pickle format."""
-    try:
-        # Save as Pickle
-        with open(output_path_pickle, 'wb') as f:
-            pickle.dump(graph, f)
-        print(f"Graph saved as Pickle: {output_path_pickle}")
+def find_all_paths(graph, start, max_paths=20):
+    """
+    Finds all paths from the start node to leaf nodes in a directed graph.
 
-    except Exception as e:
-        print(f"Error saving the graph: {e}")
+    Args:
+        graph: A NetworkX directed graph.
+        start: The starting node for the search.
+        max_paths: The maximum number of paths to find.
+
+    Returns:
+        A list of paths, where each path is a list of nodes.
+    """
+
+    paths = []
+    queue = deque([(start, [start])])
+    path_count = 0
+
+    while queue:
+        current, path = queue.popleft()
+
+        # If the current node has no outgoing edges, it's a leaf node.
+        if graph.out_degree(current) == 0:
+            paths.append(path)
+            path_count += 1
+            if path_count >= max_paths:
+                print(f"Path limit ({max_paths}) reached. Stopping exploration.")
+                break
+
+        # Explore the successors of the current node.
+        for successor in graph.successors(current):
+            if successor not in path:  # Avoid cycles
+                queue.append((successor, path + [successor]))
+
+    return paths
 
 def main():
+    # Check if the correct number of arguments is provided
     if len(sys.argv) != 3:
-        print("Usage: python script.py <directory_path> <output_directory>")
-        sys.exit(1)
-    
-    directory_path = sys.argv[1]
-    output_directory = sys.argv[2]
-
-    if not os.path.isdir(directory_path):
-        print(f"Error: {directory_path} is not a valid directory.")
+        print("Usage: python script.py <path_to_pickle_file> <target_function>")
         sys.exit(1)
 
-    if not os.path.isdir(output_directory):
-        print(f"Error: {output_directory} is not a valid directory.")
+    # Get the Pickle file path and target function from command-line arguments
+    pickle_file_path = sys.argv[1]
+    target_function = sys.argv[2]
+
+    try:
+        # Load the graph from the Pickle file
+        with open(pickle_file_path, 'rb') as f:
+            call_graph = pickle.load(f)
+    except Exception as e:
+        print(f"Error loading Pickle file: {e}")
         sys.exit(1)
 
-    # Find all JSON files in the directory and its subdirectories
-    json_files = glob.glob(os.path.join(directory_path, '**', 'callgraph-*.json'), recursive=True)
-
-    if not json_files:
-        print(f"No JSON files found in the directory: {directory_path}")
+    # Check if the target function exists in the graph
+    if target_function not in call_graph.nodes():
+        print(f"Function '{target_function}' not found in the graph.")
         sys.exit(1)
 
-    # Create a unified directed graph
-    unified_call_graph = nx.DiGraph()
+    # Find all paths from the target function to leaf nodes
+    paths = find_all_paths(call_graph, target_function)
 
-    for json_file in json_files:
-        try:
-            with open(json_file, 'r') as f:
-                call_data = json.load(f)
-            for caller, callee in call_data:
-                unified_call_graph.add_edge(caller, callee)
-        except Exception as e:
-            print(f"Error processing file {json_file}: {e}")
-
-    # Output graph information
-    #print(f"Nodes: {unified_call_graph.nodes()}")
-    #print(f"Edges: {unified_call_graph.edges()}")
-
-    # Save the graph in Pickle format
-    output_path_pickle = os.path.join(output_directory, "unified_call_graph.pkl")
-    save_graph(unified_call_graph, output_path_pickle)
-
-    # Visualize the unified graph
-    # plt.figure(figsize=(12, 8))
-    # pos = nx.spring_layout(unified_call_graph)
-    # nx.draw(
-    #     unified_call_graph, pos, with_labels=True, 
-    #     node_size=2000, node_color="lightblue", 
-    #     font_size=10, font_weight="bold", arrowsize=20
-    # )
-    # plt.title("Unified Call Graph")
-    # plt.show()
+    # Display the paths
+    if paths:
+        print(f"Paths from '{target_function}':")
+        for path in paths:
+            print(" -> ".join(path))
+    else:
+        print(f"No paths found from '{target_function}'.")
 
 if __name__ == "__main__":
     main()
