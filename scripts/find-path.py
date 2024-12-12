@@ -3,6 +3,16 @@
 import pickle
 import sys
 import networkx as nx
+import argparse
+
+def is_syscall_function(path):
+   return path.startswith("__ia32_sys_") or \
+        path.startswith("__ia32_compat_sys") or \
+        path.startswith("__ia32_sys_") or \
+        path.startswith("__x64_sys_ia32_") or \
+        path.startswith("do_syscall_64") or \
+        path.startswith("__x64_sys_") or \
+        path.startswith("do_int80_emulation")
 
 def find_shortest_paths(graph, target, max_paths=20):
     """Find shortest paths leading to the target node using BFS."""
@@ -30,15 +40,24 @@ def find_shortest_paths(graph, target, max_paths=20):
 
     return paths
 
+def parse_options():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--picklefile", help="Pickle file path",
+            metavar="PICKLEFILE", required=True)
+    parser.add_argument("--func", help="target function name",
+        metavar="FUNCTION", required=True)
+    parser.add_argument("--verbose", help="show all result(hide paths if they are not start from syscall)",
+        action="store_true")
+    
+    return parser.parse_args()
+
 def main():
     # Check if the correct number of arguments is provided
-    if len(sys.argv) != 3:
-        print("Usage: python script.py <path_to_pickle_file> <target_function>")
-        sys.exit(1)
+    args = parse_options()
     
     # Get the Pickle file path and target function from command-line arguments
-    pickle_file_path = sys.argv[1]
-    target_function = sys.argv[2]
+    pickle_file_path = args.picklefile
+    target_function = args.func
 
     try:
         # Load the graph from the Pickle file
@@ -60,7 +79,9 @@ def main():
     if paths:
         print(f"Paths to '{target_function}':")
         for path in paths:
-            print(" -> ".join(path[::-1]))  # Reverse the path order for display
+            if is_syscall_function(path[-1]) or args.verbose:
+                print(" -> ".join(path[::-1]))  # Reverse the path order for display
+            
     else:
         print(f"No paths found to '{target_function}'.")
 
