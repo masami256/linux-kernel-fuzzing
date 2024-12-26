@@ -39,7 +39,7 @@ make
 Go to kernel directoy
 
 ```
-cd kernel
+cd scripts
 ```
 
 The run build-kernel.sh.
@@ -50,7 +50,7 @@ The run build-kernel.sh.
 
 # Create bc file list
 ```
-./scripts/scripts/create_bclist.sh <path to linux kernel source directory>
+./scripts/create_bclist.sh <path to linux kernel source directory>
 ```
 
 # Analyze call graph
