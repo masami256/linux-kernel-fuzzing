@@ -11,3 +11,4 @@ git checkout 68da6d951a345757b69b764ceb8dda1e9d65b038
 
 make
 
+GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o ./bin/syz-cover github.com/google/syzkaller/tools/syz-cover
