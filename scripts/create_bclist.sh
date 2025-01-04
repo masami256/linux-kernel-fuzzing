@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [ $# != 1 ]; then
-    echo "usage: $0 [path to directory]"
+    echo "usage: $0 [path to bcfiles directory]"
     exit 1
 fi
 

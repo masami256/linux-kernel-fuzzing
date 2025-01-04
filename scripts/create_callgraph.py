@@ -21,7 +21,7 @@ def save_graph(graph, output_path_pickle):
 
 def main():
     if len(sys.argv) != 3:
-        print(f"Usage: {sys.argv[0]} <linux kernel directory> <output_directory>")
+        print(f"Usage: {sys.argv[0]} <bcfiles directory> <output_directory>")
         sys.exit(1)
     
     directory_path = sys.argv[1]

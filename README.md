@@ -62,7 +62,7 @@ The run build-kernel.sh.
 # Create unified call graph
 
 ```
-./scripts/create_callgraph.py <path to linux kernel source directory> <output directory>
+./scripts/create_callgraph.py <path to bcfiles directory> <output directory>
 ```
 
 # Find path
