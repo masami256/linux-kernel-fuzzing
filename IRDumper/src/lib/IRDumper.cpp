@@ -11,7 +11,7 @@ void saveModule(Module &M, Twine filename)
     StringRef FN = filename.getSingleStringRef();
     StringRef Path = sys::path::parent_path(FN);
     //std::cout << "Path: " << Path.str() << "\n";
-    std::string OutputDir = (Twine("bcfile") + "/" + Path).str();
+    std::string OutputDir = (Twine("bcfiles") + "/" + Path).str();
 
     if (!sys::fs::exists(OutputDir)) {
         sys::fs::create_directories(OutputDir);

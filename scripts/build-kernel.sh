@@ -7,12 +7,16 @@ fi
 
 source $(dirname "$(realpath "${BASH_SOURCE[0]}")")/../config.sh
 
-KERNEL_DIR="$1"
-CONFIG_FILE="$2"
+KERNEL_DIR=$(realpath $1)
+CONFIG_FILE=""
+if [ "$2" != "" ]; then
+    CONFIG_FILE=$(realpath "$2")
+fi
 
 echo "clang is ${LKF_CLANG}"
 cd "${KERNEL_DIR}"
 
+rm -fr "${KERNEL_DIR}/bcfiles" || true
 make LLVM=1 CC="${LKF_CLANG}" clean
 make LLVM=1 CC="${LKF_CLANG}" mrproper
 
@@ -20,8 +24,8 @@ git ls-files --others --exclude-standard | xargs rm -f
 git checkout Makefile
 cp Makefile Makefile.bak
 
-MY_KBUILD_USERCFLAGS="-Wno-error -g -Xclang -no-opaque-pointers -fpass-plugin=${IRDUMPER}"
-MY_KBUILD_CFLAGS="-Wno-error -g -Xclang -no-opaque-pointers -fpass-plugin=$IRDUMPER"
+MY_KBUILD_USERCFLAGS="-Wno-error -g -Xclang -no-opaque-pointers -Xclang -disable-O0-optnone -fpass-plugin=${IRDUMPER}"
+MY_KBUILD_CFLAGS="-Wno-error -g -Xclang -no-opaque-pointers -Xclang -disable-O0-optnone -fpass-plugin=$IRDUMPER"
 
 echo "KBUILD_USERCFLAGS += ${MY_KBUILD_USERCFLAGS}" >> Makefile
 echo "KBUILD_CFLAGS += ${MY_KBUILD_CFLAGS}" >> Makefile
@@ -42,12 +46,13 @@ if [ "${CONFIG_FILE}" = "" ]; then
 
     make LLVM=1 CC="${LKF_CLANG}" olddefconfig
 else
-    cp "${CONFIG_FILE}" ./.config
+    echo "[+]Use ${CONFIG_FILE} as a .config"
+    cp -f "${CONFIG_FILE}" "${KERNEL_DIR}/.config"
     make LLVM=1 CC="${LKF_CLANG}" olddefconfig
 fi
 
 echo "[+]$(date) : Start build"
-make LLVM=1 CC="${LKF_CLANG}" -j$(nproc)
+make LLVM=1 CC="${LKF_CLANG}" V=1 -j$(nproc)
 echo "[+]$(date) : End build"
 echo "[+]*.bc files are stored in ${KERNEL_DIR}/bcfiles"
 
