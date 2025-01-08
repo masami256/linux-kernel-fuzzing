@@ -54,5 +54,6 @@ fi
 echo "[+]$(date) : Start build"
 make LLVM=1 CC="${LKF_CLANG}" V=1 -j$(nproc)
 echo "[+]$(date) : End build"
-echo "[+]*.bc files are stored in ${KERNEL_DIR}/bcfiles"
+mv "${KERNEL_DIR}/bcfiles" "${LKF_WORKDIR}/bcfiles"
+echo "[+]*.bc files are stored in ${LKF_WORKDIR}/bcfiles"
 
