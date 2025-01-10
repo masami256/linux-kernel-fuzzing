@@ -17,7 +17,6 @@ echo "clang is ${LKF_CLANG}"
 cd "${KERNEL_DIR}"
 
 rm -fr "${KERNEL_DIR}/bcfiles" || true
-rm -fr "${LKF_WORKDIR}/bcfiles" || true
 
 make LLVM=1 CC="${LKF_CLANG}" clean
 make LLVM=1 CC="${LKF_CLANG}" mrproper
@@ -56,6 +55,5 @@ fi
 echo "[+]$(date) : Start build"
 make LLVM=1 CC="${LKF_CLANG}" V=1 -j$(nproc)
 echo "[+]$(date) : End build"
-mv "${KERNEL_DIR}/bcfiles" "${LKF_WORKDIR}/bcfiles"
-echo "[+]*.bc files are stored in ${LKF_WORKDIR}/bcfiles"
+echo "[+]*.bc files are stored in ${KERNEL_DIR}/bcfiles"
 
