@@ -17,6 +17,8 @@ echo "clang is ${LKF_CLANG}"
 cd "${KERNEL_DIR}"
 
 rm -fr "${KERNEL_DIR}/bcfiles" || true
+rm -fr "${LKF_WORKDIR}/bcfiles" || true
+
 make LLVM=1 CC="${LKF_CLANG}" clean
 make LLVM=1 CC="${LKF_CLANG}" mrproper
 
