@@ -53,7 +53,10 @@ def main(directory_path):
         # remove empty data
         if not all_data[c_filename]:
             del all_data[c_filename]
-        
+    
+    with open("memory_ops.json", "w") as f:
+        json.dump(all_data, f, indent=4)
+
     with open("memory_ops.csv", "w") as f:
         f.write("source file, caller, callee\n")
         for filename in all_data:
