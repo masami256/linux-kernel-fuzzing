@@ -8,14 +8,19 @@ import re
 
 import pprint
 
-MEMORY_OPERATIONS = [
+MEMORY_ALLOC_OPERATIONS = [
     "__kmalloc",
     "kmalloc_large",
     "kmalloc",
     "kzalloc",
     "kcalloc",
-    "kfree",
 ]
+
+MEMORY_FREE_OPERATIONS = [
+        "kfree",
+]
+
+MEMORY_OPERATIONS = MEMORY_ALLOC_OPERATIONS + MEMORY_FREE_OPERATIONS
 
 def main(directory_path):
     if not os.path.isdir(directory_path):
