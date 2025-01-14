@@ -36,7 +36,21 @@ if [ "${CONFIG_FILE}" = "" ]; then
     make LLVM=1 CC="${LKF_CLANG}" kvm_guest.config
 
     ./scripts/config -e KCOV
-    ./scripts/config -e DEBUG_INFO_DWARF4
+    ./scripts/config -e KCOV_INSTRUMENT_ALL
+    ./scripts/config -e KCOV_ENABLE_COMPARISONS
+    ./scripts/config -e DEBUG_FS
+    ./scripts/config -e DEBUG_KMEMLEAK
+    ./scripts/config -e DEBUG_INFO_DWARF_TOOLCHAIN_DEFAULT
+    ./scripts/config -e KALLSYM
+    ./scripts/config -e KALLSYMS_ALL
+    ./scripts/config -e NAMESPACES
+    ./scripts/config -e UTS_NS
+    ./scripts/config -e IPC_NS
+    ./scripts/config -e PID_NS
+    ./scripts/config -e NET_NS
+    ./scripts/config -e CGROUP_PIDS
+    ./scripts/config -e MEMCG
+    ./scripts/config -e USER_NS
     ./scripts/config -e KASAN
     ./scripts/config -e KASAN_INLINE
     ./scripts/config -e KFENCE
@@ -44,6 +58,9 @@ if [ "${CONFIG_FILE}" = "" ]; then
     ./scripts/config -e SECURITYFS
     ./scripts/config -e CMDLINE_BOOL
     ./scripts/config --set-val CMDLINE "net.ifnames=0"
+    ./scripts/config -d RANDOMIZE_BASE
+    ./scripts/config -e HARDENED_USERCOPY
+    ./scripts/config -e FORTIFY_SOURCE
 
     make LLVM=1 CC="${LKF_CLANG}" olddefconfig
 else
