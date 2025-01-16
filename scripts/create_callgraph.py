@@ -49,7 +49,10 @@ def main():
         try:
             with open(json_file, 'r') as f:
                 call_data = json.load(f)
-            for caller, callee in call_data:
+            for data in call_data:
+                caller = data['CallerName']
+                callee = data['CalleeName']
+
                 unified_call_graph.add_edge(caller, callee)
         except Exception as e:
             print(f"Error processing file {json_file}: {e}")
