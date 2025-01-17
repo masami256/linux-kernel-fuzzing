@@ -20,7 +20,6 @@ static void countBasicBlocks(llvm::Module &M, std::vector<std::string> &data) {
 		if (F.getName().str().find("llvm.") == 0) {
 			continue;
 		}
-		unsigned totalBlocks = F.size();
 
 		std::stringstream ss;
 		ss << "[" 
@@ -32,7 +31,7 @@ static void countBasicBlocks(llvm::Module &M, std::vector<std::string> &data) {
 			<< F.getName().str() 
 			<< '"'
 			<< "," 
-			<< totalBlocks 
+			<< F.size() 
 			<< "]\n";
 		data.push_back(ss.str());
 	}
