@@ -5,22 +5,27 @@ import glob
 import os
 import json
 import re
+import argparse
 
 import pprint
 
-MEMORY_ALLOC_OPERATIONS = [
+KERNEL_MEMORY_ALLOC_OPERATIONS = [
     "__kmalloc",
     "kmalloc_large",
     "kmalloc",
     "kzalloc",
     "kcalloc",
+    "kfree"
 ]
 
-MEMORY_FREE_OPERATIONS = [
-        "kfree",
+LIBC_MEMORY_ALLOC_OPERATIONS = [
+    "malloc",
+    "calloc",
+    "realloc",
+    "free"
 ]
 
-MEMORY_OPERATIONS = MEMORY_ALLOC_OPERATIONS + MEMORY_FREE_OPERATIONS
+MEMORY_OPERATIONS = None
 
 def main(directory_path):
     if not os.path.isdir(directory_path):
@@ -45,9 +50,9 @@ def main(directory_path):
         with open(j) as f:
             data = json.load(f)
 
-        for funcs in data:
-            caller = funcs[0]
-            callee = funcs[1]
+        for d in data:
+            caller = d["CallerName"]
+            callee = d["CalleeName"]
 
             if callee in MEMORY_OPERATIONS:
                 if not caller in all_data[c_filename]:
@@ -70,10 +75,27 @@ def main(directory_path):
                     f.write(f"{filename}, {funcname}, {callee}\n")
 
     print("[+]Parse result was written to memory_ops.csv")
-    
-if __name__ == "__main__":
-    if not len(sys.argv) == 2:
-        print(f"[*]Usage {sys.argv[0]} <path to callgraph json file director")
-        exit(1)
 
-    main(sys.argv[1])
+def parse_options():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--kmalloc", help="check kmalloc related operations", action="store_true")
+    parser.add_argument("--malloc", help="check malloc related operations", action="store_true")
+    parser.add_argument("--dir", help="Path to callgraph json file director",
+        metavar="DIRECTORY", required=True)
+    
+    args = parser.parse_args()
+    if args.kmalloc and args.malloc:
+        print("[-]You can only choose one of kmalloc or malloc")
+        sys.exit(1)
+    
+    return args
+
+if __name__ == "__main__":
+
+    args = parse_options()
+    if args.kmalloc:
+        MEMORY_OPERATIONS = KERNEL_MEMORY_ALLOC_OPERATIONS
+    elif args.malloc:
+        MEMORY_OPERATIONS = LIBC_MEMORY_ALLOC_OPERATIONS
+
+    main(args.dir)
