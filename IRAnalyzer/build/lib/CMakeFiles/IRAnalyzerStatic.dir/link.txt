@@ -1,0 +1,2 @@
+/home/masami/projects/linux-kernel-fuzzing/work/opt/llvm-15.0.7/bin/llvm-ar qc libIRAnalyzerStatic.a CMakeFiles/IRAnalyzerObj.dir/IRAnalyzer.cpp.o
+/home/masami/projects/linux-kernel-fuzzing/work/opt/llvm-15.0.7/bin/llvm-ranlib libIRAnalyzerStatic.a
