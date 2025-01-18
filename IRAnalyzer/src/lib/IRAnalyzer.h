@@ -21,5 +21,6 @@
 #include "llvm/Support/Path.h"
 #include <unistd.h>
 #include <sstream>
+#include <fstream>
 #include <vector>
 #endif // IRAnalyzer

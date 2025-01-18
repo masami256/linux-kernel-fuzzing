@@ -5,6 +5,11 @@ using namespace llvm;
 cl::list<std::string> InputFilenames(
     cl::Positional, cl::OneOrMore, cl::desc("<input bitcode files>"));
 
+
+cl::opt<std::string> OutputFilename(
+    "output", cl::desc("output file name"),
+    cl::init("bb_info.json"));
+
 cl::opt<bool> BBAnalyze(
     "bb-analyze", 
 	cl::desc("Basic Block analyze"), 
@@ -22,19 +27,44 @@ static void countBasicBlocks(llvm::Module &M, std::vector<std::string> &data) {
 		}
 
 		std::stringstream ss;
-		ss << "[" 
+		ss << "{" 
+			<< "\"ModuleName\":"
 			<< '"'
 			<< modulePath 
 			<< '"'
 			<< "," 
+			<< "\"FunctionName\":"
 			<< '"'
 			<< F.getName().str() 
 			<< '"'
 			<< "," 
+			<< "\"BasicBlocks\":"
 			<< F.size() 
-			<< "]\n";
+			<< "}";
 		data.push_back(ss.str());
 	}
+}
+
+static void Write2Json(std::vector<std::string> AllData) {
+	std::ofstream os(OutputFilename);
+	if (!os) {
+        std::cerr << "Failed to open file for writing.\n";
+        return;
+    }
+
+    os << "[\n";
+    bool firstPair = true; // Used to handle commas between JSON objects
+
+	for (auto i = 0; i < AllData.size(); ++i) {
+		std::string line = AllData[i];
+
+		os << line;
+
+		if (i < AllData.size() - 1) {
+			os << ",\n";
+		}
+	}
+    os << "\n]\n"; // Close the JSON array
 }
 
 static void run(const cl::list<std::string> &InputFilenames)
@@ -56,9 +86,7 @@ static void run(const cl::list<std::string> &InputFilenames)
 		countBasicBlocks(*M, AllData);	
 	}
 
-	for (auto &data : AllData) {
-		std::cout << data;
-	}
+	Write2Json(AllData);
 }
 
 int main(int argc, char **argv)
