@@ -50,7 +50,7 @@ The run build-kernel.sh.
 
 # Create bc file list
 ```
-./scripts/create_bclist.sh <path to linux kernel source directory>
+./scripts/create-bclist.sh <path to linux kernel source directory>
 ```
 
 # Analyze call graph
@@ -62,7 +62,7 @@ The run build-kernel.sh.
 # Create unified call graph
 
 ```
-./scripts/create_callgraph.py <path to bcfiles directory> <output directory>
+./scripts/create-callgraph.py <path to bcfiles directory> <output directory>
 ```
 
 # Find path
