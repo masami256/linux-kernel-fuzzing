@@ -3,3 +3,4 @@ work/
 linux-kernel-fuzzing.code-workspace
 bc.list
 unified_call_graph.pkl
+IRAnalyzer/build/

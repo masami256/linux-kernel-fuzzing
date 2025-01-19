@@ -26,6 +26,11 @@ static void countBasicBlocks(llvm::Module &M, std::vector<std::string> &data) {
 			continue;
 		}
 
+		if (F.size() == 0) {
+			// Skip functions without basic blocks
+			continue;
+		}
+
 		std::stringstream ss;
 		ss << "{" 
 			<< "\"ModuleName\":"
@@ -87,6 +92,7 @@ static void run(const cl::list<std::string> &InputFilenames)
 	}
 
 	Write2Json(AllData);
+	std::cout << "Output file: " << OutputFilename << "\n";
 }
 
 int main(int argc, char **argv)
