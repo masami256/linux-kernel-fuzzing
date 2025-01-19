@@ -43,9 +43,9 @@ def main(directory_path):
     for j in json_files:
         tmp = j.split("/")
         paths = "/".join(tmp[idx:len(tmp) -1])
-        c_filename = paths + "/" + re.search(restr, os.path.basename(j)).group(1) + ".c"
+        bc_filename = os.path.abspath(directory_path + paths + "/" + re.search(restr, os.path.basename(j)).group(1) + ".bc")
         
-        all_data[c_filename] = {}
+        all_data[bc_filename] = {}
 
         with open(j) as f:
             data = json.load(f)
@@ -55,26 +55,19 @@ def main(directory_path):
             callee = d["CalleeName"]
 
             if callee in MEMORY_OPERATIONS:
-                if not caller in all_data[c_filename]:
-                    all_data[c_filename][caller] = [callee]
+                if not caller in all_data[bc_filename]:
+                    all_data[bc_filename][caller] = [callee]
                 else:
-                    all_data[c_filename][caller].append(callee)
+                    all_data[bc_filename][caller].append(callee)
 
         # remove empty data
-        if not all_data[c_filename]:
-            del all_data[c_filename]
+        if not all_data[bc_filename]:
+            del all_data[bc_filename]
     
     with open("memory_ops.json", "w") as f:
         json.dump(all_data, f, indent=4)
 
-    with open("memory_ops.csv", "w") as f:
-        f.write("source file, caller, callee\n")
-        for filename in all_data:
-            for funcname in all_data[filename]:
-                for callee in all_data[filename][funcname]:
-                    f.write(f"{filename}, {funcname}, {callee}\n")
-
-    print("[+]Parse result was written to memory_ops.csv")
+    print("[+]Parse result was written to memory_ops.json")
 
 def parse_options():
     parser = argparse.ArgumentParser()
