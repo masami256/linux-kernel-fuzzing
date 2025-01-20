@@ -32,12 +32,7 @@ static void countBasicBlocks(llvm::Module &M, std::vector<std::string> &data) {
 		}
 
 		std::stringstream ss;
-		ss << "{" 
-			<< "\"ModuleName\":"
-			<< '"'
-			<< modulePath 
-			<< '"'
-			<< "," 
+		ss << "\"" << modulePath << "\": {" 
 			<< "\"FunctionName\":"
 			<< '"'
 			<< F.getName().str() 
@@ -57,7 +52,7 @@ static void Write2Json(std::vector<std::string> AllData) {
         return;
     }
 
-    os << "[\n";
+    os << "{\n";
     bool firstPair = true; // Used to handle commas between JSON objects
 
 	for (auto i = 0; i < AllData.size(); ++i) {
@@ -69,7 +64,7 @@ static void Write2Json(std::vector<std::string> AllData) {
 			os << ",\n";
 		}
 	}
-    os << "\n]\n"; // Close the JSON array
+    os << "\n}\n"; // Close the JSON array
 }
 
 static void run(const cl::list<std::string> &InputFilenames)
