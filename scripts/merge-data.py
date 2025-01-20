@@ -9,6 +9,45 @@ import re
 
 import pprint
 
+def merge_data(cg_data, memory_ops, bb_info):
+    merged = {}
+
+    for moduleName in cg_data:
+        merged[moduleName] = {}
+        if moduleName in memory_ops:
+            for functionName in memory_ops[moduleName]:
+                alloc_cnt = len(memory_ops[moduleName][functionName]["alloc"]) if memory_ops[moduleName][functionName]["alloc"] else 0
+                free_cnt = len(memory_ops[moduleName][functionName]["free"]) if memory_ops[moduleName][functionName]["free"] else 0
+
+                merged[moduleName][functionName] = {
+                    "memory_ops": {
+                        "alloc": alloc_cnt,
+                        "free": free_cnt,
+                        "total": alloc_cnt + free_cnt,
+                    }
+                }
+
+                if moduleName in bb_info:
+                    if functionName in bb_info[moduleName]:
+                        merged[moduleName][functionName]["bbcount"] = bb_info[moduleName][functionName]["BasicBlocks"]
+                        merged[moduleName][functionName]["CallInst"] = cg_data[moduleName][functionName]["FunctionCalls"]
+
+        if not merged[moduleName]:
+            del merged[moduleName]
+    
+    pprint.pprint(merged)
+    return merged
+
+def read_bb_info_json(bb_info_json):
+    with open(bb_info_json) as f:
+        bb_info = json.load(f)
+    return bb_info
+
+def read_memory_ops_json(memory_ops_json):
+    with open(memory_ops_json) as f:
+        memory_ops = json.load(f)
+    return memory_ops
+
 def count_function_calls(cg_data):
     for bc_filename in cg_data:
         for caller in cg_data[bc_filename]:
@@ -38,10 +77,14 @@ def read_callgraph_json(directory_path):
         paths = "/".join(tmp[idx:len(tmp) -1])
         bc_filename = os.path.abspath(directory_path + paths + "/" + re.search(restr, os.path.basename(j)).group(1) + ".bc")
 
-        cg_data[bc_filename] = {}
-
         with open(j) as f:
             module_data = json.load(f)
+        
+        # ignore empty data
+        if not module_data:
+            continue
+
+        cg_data[bc_filename] = {}
 
         for d in module_data:
             caller = d["CallerName"]
@@ -85,8 +128,11 @@ def main():
     args = parse_options()
     
     cg_data = read_callgraph_json(args.bcfiles_dir)
+    memory_ops = read_memory_ops_json(args.memory_ops_json)
+    bb_info = read_memory_ops_json(args.bb_info_json)
 
-    pprint.pprint(cg_data)
+    
+    merged_data = merge_data(cg_data, memory_ops, bb_info)
 
 if __name__ == "__main__":
     main()

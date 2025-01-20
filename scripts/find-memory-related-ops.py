@@ -15,14 +15,19 @@ KERNEL_MEMORY_ALLOC_OPERATIONS = [
     "kmalloc",
     "kzalloc",
     "kcalloc",
-    "kfree"
 ]
 
+KERNEL_MEMORY_FREE_OPERATIONS = [
+    "kfree",
+]
 LIBC_MEMORY_ALLOC_OPERATIONS = [
     "malloc",
     "calloc",
     "realloc",
-    "free"
+]
+
+LIBC_MEMORY_FREE_OPERATIONS = [
+    "free",
 ]
 
 MEMORY_OPERATIONS = None
@@ -45,25 +50,42 @@ def main(directory_path):
         paths = "/".join(tmp[idx:len(tmp) -1])
         bc_filename = os.path.abspath(directory_path + paths + "/" + re.search(restr, os.path.basename(j)).group(1) + ".bc")
         
-        all_data[bc_filename] = {}
-
         with open(j) as f:
             data = json.load(f)
+
+        if not data:
+            continue
+
+        all_data[bc_filename] = {}
 
         for d in data:
             caller = d["CallerName"]
             callee = d["CalleeName"]
 
-            if callee in MEMORY_OPERATIONS:
-                if not caller in all_data[bc_filename]:
-                    all_data[bc_filename][caller] = [callee]
+            if not caller in all_data[bc_filename]:
+                all_data[bc_filename][caller] = {
+                    "alloc": None,
+                    "free": None,
+                }
+
+            if callee in MEMORY_ALLOC_OPERATIONS:
+                if all_data[bc_filename][caller]["alloc"] is None:
+                    all_data[bc_filename][caller]["alloc"] = [callee]
                 else:
-                    all_data[bc_filename][caller].append(callee)
+                    all_data[bc_filename][caller]["alloc"].append(callee)
+            elif callee in MEMORY_FREE_OPERATION:
+                if all_data[bc_filename][caller]["free"] is None:
+                    all_data[bc_filename][caller]["free"] = [callee]
+                else:
+                    all_data[bc_filename][caller]["free"].append(callee)
+
+            if not all_data[bc_filename][caller]["alloc"] and not all_data[bc_filename][caller]["free"]:
+                del all_data[bc_filename][caller]
 
         # remove empty data
         if not all_data[bc_filename]:
             del all_data[bc_filename]
-    
+                
     with open("memory_ops.json", "w") as f:
         json.dump(all_data, f, indent=4)
 
@@ -87,8 +109,10 @@ if __name__ == "__main__":
 
     args = parse_options()
     if args.kmalloc:
-        MEMORY_OPERATIONS = KERNEL_MEMORY_ALLOC_OPERATIONS
+        MEMORY_ALLOC_OPERATIONS = KERNEL_MEMORY_ALLOC_OPERATIONS
+        MEMORY_FREE_OPERATION = KERNEL_MEMORY_FREE_OPERATIONS
     elif args.malloc:
-        MEMORY_OPERATIONS = LIBC_MEMORY_ALLOC_OPERATIONS
+        MEMORY_ALLOC_OPERATIONS = LIBC_MEMORY_ALLOC_OPERATIONS
+        MEMORY_FREE_OPERATION = LIBC_MEMORY_FREE_OPERATIONS
 
     main(args.dir)

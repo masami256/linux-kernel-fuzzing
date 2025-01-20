@@ -20,6 +20,7 @@ static void countBasicBlocks(llvm::Module &M, std::vector<std::string> &data) {
 	std::string moduleName = M.getName().str();
 	char modulePath[PATH_MAX] = { 0 };
 	realpath(moduleName.c_str(), modulePath);
+	std::vector<std::string> tmp;
 
 	for (auto &F : M) {
 		if (F.getName().str().find("llvm.") == 0) {
@@ -32,17 +33,26 @@ static void countBasicBlocks(llvm::Module &M, std::vector<std::string> &data) {
 		}
 
 		std::stringstream ss;
-		ss << "\"" << modulePath << "\": {" 
-			<< "\"FunctionName\":"
-			<< '"'
+		ss << '"'
 			<< F.getName().str() 
-			<< '"'
-			<< "," 
+			<< "\": {" 
 			<< "\"BasicBlocks\":"
 			<< F.size() 
 			<< "}";
-		data.push_back(ss.str());
+		tmp.push_back(ss.str());
 	}
+
+	std::stringstream s;
+	s << "\"" << modulePath << "\": {";
+	data.push_back(s.str());
+	for (auto i = 0; i < tmp.size(); ++i) {
+		data.push_back(tmp[i]);
+		if (i < tmp.size() - 1) {
+			data.push_back(",\n");
+		}
+	}
+	data.push_back("\n}");
+	data.push_back(",\n");
 }
 
 static void Write2Json(std::vector<std::string> AllData) {
@@ -59,10 +69,6 @@ static void Write2Json(std::vector<std::string> AllData) {
 		std::string line = AllData[i];
 
 		os << line;
-
-		if (i < AllData.size() - 1) {
-			os << ",\n";
-		}
 	}
     os << "\n}\n"; // Close the JSON array
 }
@@ -85,6 +91,8 @@ static void run(const cl::list<std::string> &InputFilenames)
 
 		countBasicBlocks(*M, AllData);	
 	}
+
+	AllData.pop_back();
 
 	Write2Json(AllData);
 	std::cout << "Output file: " << OutputFilename << "\n";
