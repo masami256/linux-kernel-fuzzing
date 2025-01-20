@@ -9,6 +9,17 @@ import re
 
 import pprint
 
+def sort_by_bbcount_and_memory_ops(data):
+    results = []
+    for file_path, functions in data.items():
+        for func_name, metrics in functions.items():
+            bbcount = metrics.get('bbcount', 0)
+            memory_ops_total = metrics.get('memory_ops', {}).get('total', 0)
+            results.append((file_path, func_name, bbcount, memory_ops_total))
+    
+    results.sort(key=lambda x: (x[2], x[3]), reverse=True)
+    return results
+
 def merge_data(cg_data, memory_ops, bb_info):
     merged = {}
 
@@ -35,8 +46,7 @@ def merge_data(cg_data, memory_ops, bb_info):
         if not merged[moduleName]:
             del merged[moduleName]
     
-    pprint.pprint(merged)
-    return merged
+    return sort_by_bbcount_and_memory_ops(merged)
 
 def read_bb_info_json(bb_info_json):
     with open(bb_info_json) as f:
@@ -120,7 +130,8 @@ def parse_options():
                         metavar="MEMORY_OPS_JSON")  
     parser.add_argument("--bb-info-json", help="BasicBlock information json", required=True,
                         metavar="BB_INFO_JSON")  
-    
+    parser.add_argument("--output", help="Output file name", required=False,
+                        metavar="OUTPUT_FILE_NAME", default="output")  
     args = parser.parse_args()
     return args
 
@@ -132,7 +143,18 @@ def main():
     bb_info = read_memory_ops_json(args.bb_info_json)
 
     
-    merged_data = merge_data(cg_data, memory_ops, bb_info)
+    result = merge_data(cg_data, memory_ops, bb_info)
 
+    output_csv = args.output + ".csv"
+    output_json = args.output + ".json"
+
+    with open(output_json, "w") as f:
+        json.dump(result, f, indent=4)
+
+    with open(output_csv, "w") as f:
+        for r in result:
+            f.write(f"{r[0]},{r[1]},{r[2]},{r[3]}\n")
+        
+    print(f"Output written to {output_json} and {output_csv}")
 if __name__ == "__main__":
     main()
