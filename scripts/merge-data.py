@@ -46,7 +46,7 @@ def merge_data(cg_data, memory_ops, bb_info):
         if not merged[moduleName]:
             del merged[moduleName]
     
-    return sort_by_bbcount_and_memory_ops(merged)
+    return merged
 
 def read_bb_info_json(bb_info_json):
     with open(bb_info_json) as f:
@@ -143,18 +143,23 @@ def main():
     bb_info = read_memory_ops_json(args.bb_info_json)
 
     
-    result = merge_data(cg_data, memory_ops, bb_info)
+    merged_data = merge_data(cg_data, memory_ops, bb_info)
+    sorted_data = sort_by_bbcount_and_memory_ops(merged_data)
 
     output_csv = args.output + ".csv"
     output_json = args.output + ".json"
+    output_merged_json = args.output + "-merged.json"
+
+    with open(output_merged_json, "w") as f:
+        json.dump(merged_data, f, indent=4)
 
     with open(output_json, "w") as f:
-        json.dump(result, f, indent=4)
+        json.dump(sorted_data, f, indent=4)
 
     with open(output_csv, "w") as f:
-        for r in result:
+        for r in sorted_data:
             f.write(f"{r[0]},{r[1]},{r[2]},{r[3]}\n")
         
-    print(f"Output written to {output_json} and {output_csv}")
+    print(f"Output written to {output_json}, {output_csv}, and {output_merged_json}")
 if __name__ == "__main__":
     main()
