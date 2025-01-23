@@ -7,7 +7,7 @@ cd "${LKF_WORKDIR}"
 git clone https://github.com/google/syzkaller.git
 cd syzkaller
 
-git checkout 68da6d951a345757b69b764ceb8dda1e9d65b038
+git checkout 9d4f14f879d34d715f61d84f4b1144e9fa8ca236
 
 make
 
