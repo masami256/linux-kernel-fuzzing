@@ -179,7 +179,7 @@ def main():
     with open(merged_by_functions_json, "w") as f:
         json.dump(merged_by_function_data, f, indent=4)
 
-    with open(merged_by_file_csv, "w") as f:
+    with open(merged_by_file_json, "w") as f:
         json.dump(sorted_data, f, indent=4)
 
     with open(merged_by_file_csv, "w") as f:

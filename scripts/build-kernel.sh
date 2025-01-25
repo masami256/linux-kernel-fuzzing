@@ -13,6 +13,8 @@ if [ "$2" != "" ]; then
     CONFIG_FILE=$(realpath "$2")
 fi
 
+export PATH="${LKF_LLVM_INSTALL_DIR}/bin:${PATH}"
+
 echo "clang is ${LKF_CLANG}"
 cd "${KERNEL_DIR}"
 

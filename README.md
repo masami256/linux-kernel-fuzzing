@@ -34,6 +34,18 @@ Then run make command.
 make
 ```
 
+# Build IRAnalyzer
+
+```
+cd scripts
+```
+
+Then run build-iranalyzer.sh.
+
+```
+./build-iranalyzer.sh
+```
+
 # Build linux kernel
 
 Go to kernel directoy
@@ -69,4 +81,29 @@ The run build-kernel.sh.
 
 ```
 ./scripts/find-path.py ./unified_call_graph.pkl <function name>
+```
+
+# Find memory related operations
+
+```
+./scripts/find-memory-related-ops.py [memory operation option] <path to call graph json files directory>
+```
+
+# Create bb-info json
+
+```
+./IRAnalyzer/build/iranalyzer @bc.list
+```
+
+# Analyze memory ops functions
+
+```
+./scripts/merge-data.py --bcfiles-dir <path to bcfiles directory> --memory-ops-json <path to memory ops json> --bb-info-json <path to bb-info.json>
+```
+
+# Using docker
+
+```
+docker compose build
+docker compose run --service-ports linux-kernel-fuzzing
 ```
