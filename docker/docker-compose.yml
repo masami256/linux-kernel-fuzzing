@@ -1,0 +1,22 @@
+services:
+  linux-kernel-fuzzing:
+    image: linux-kernel-fuzzing
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        uid: ${UID:-1000}
+    volumes:
+      - ../:/home/fuzz/linux-kernel-fuzzing:rw
+      - /dev:/dev:rw
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    ports:
+      - "56741:56741"
+    privileged: true
+    cap_add:
+      - NET_ADMIN
+    user: fuzz
+    stdin_open: true
+    tty: true
+
