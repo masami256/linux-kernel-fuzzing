@@ -177,6 +177,9 @@ def main():
     merged_by_file_csv = "file_analysis_" + args.output + ".csv"
     merged_by_file_json = "file_analysis_" + args.output + ".json"
 
+    with open("cg_data.json", "w") as f:
+        json.dump(cg_data, f, indent=4)
+
     with open(merged_by_functions_json, "w") as f:
         json.dump(merged_by_function_data, f, indent=4)
 
