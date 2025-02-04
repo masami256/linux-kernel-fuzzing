@@ -19,7 +19,7 @@ def merge_data_by_file(merged_by_function_data):
             icalls = sum([v.get("FunctionCalls", {}).get("TotalIndirectCalls", 0) for v in merged_by_function_data[bcfile].values()])
             bbcount = sum([v.get("bbcount", 0) for v in merged_by_function_data[bcfile].values()])
             mem_ops_count = sum([v.get("memory_ops", {}).get("total", 0) for v in merged_by_function_data[bcfile].values()])
-            icall_targets = sum([v.get("FunctionCalls", {}).get("TotalIndirectCalls", 0) for v in merged_by_function_data[bcfile].values()])
+            icall_targets = sum([v.get("FunctionCalls", {}).get("TotalIndirectCallTargets", 0) for v in merged_by_function_data[bcfile].values()])
 
             if icalls == 0:
                 continue
