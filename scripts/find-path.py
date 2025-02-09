@@ -4,6 +4,7 @@ import pickle
 import sys
 import networkx as nx
 import argparse
+import yaml
 
 def is_syscall_function(path):
    return path.startswith("__ia32_sys_") or \
@@ -46,6 +47,7 @@ def parse_options():
             metavar="PICKLEFILE", required=True)
     parser.add_argument("--func", help="target function name",
         metavar="FUNCTION", required=True)
+    parser.add_argument("--output", default="paths_output.yml", help="output file path")
     parser.add_argument("--verbose", help="show all result(hide paths if they are not start from syscall)",
         action="store_true")
     
@@ -75,16 +77,21 @@ def main():
     # Find all shortest paths to the target function
     paths = find_shortest_paths(call_graph, target_function)
 
+    paths_arr = []
+
     # Display the paths
     if paths:
         print(f"Paths to '{target_function}':")
         for path in paths:
             if is_syscall_function(path[-1]) or args.verbose:
                 print(" -> ".join(path[::-1]))  # Reverse the path order for display
-            
+                paths_arr.append(path[::-1])
     else:
         print(f"No paths found to '{target_function}'.")
 
+    if len(paths_arr):
+        with open(args.output, "w") as f:
+            yaml.dump(paths_arr, f)
 
 if __name__ == "__main__":
     main()
