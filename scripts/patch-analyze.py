@@ -5,6 +5,8 @@ from unidiff import PatchSet
 import sys
 import argparse
 import re
+import os
+import yaml
 import pprint
 
 IS_ADDED = 0x1
@@ -19,6 +21,9 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Analyze patch files to extract changed functions.")
     parser.add_argument("--patchfiles", help="Comma-separated list of patch files to analyze.", \
                         metavar="patchfile1,patchfile2", required=True)
+    parser.add_argument("--output", help="Output file to write the results.", default="patch-analyzed-result.yml", \
+                        metavar="Output file name", required=False)
+
     return parser.parse_args()
 
 def get_updated_files(patch):
@@ -71,7 +76,7 @@ def get_changed_functions(patch):
             removed_function = None
 
             section_header = hunk.section_header.strip()
-            pprint.pprint(f"section header: {section_header}")
+            #pprint.pprint(f"section header: {section_header}")
 
             # Extract function name from section header.
             # Section header is of the form @@ -start_line,start_line +end_line,end_line @@.
@@ -135,8 +140,6 @@ def get_changed_functions(patch):
 
     return changed_functions
 
-
-
 def read_patch_file(patchfile):
     with open(patchfile, 'r') as patch_file:
         return PatchSet(patch_file)
@@ -144,14 +147,24 @@ def read_patch_file(patchfile):
 def main():
     args = parse_args()
     patchfiles = args.patchfiles.split(",")
+    updated_files = {}
 
     for patchfile in patchfiles:
         print("Analyzing patch file: %s" % patchfile)
         patch = read_patch_file(patchfile)
         modified_functions = get_changed_functions(patch)
-        updated_files = get_updated_files(patch)
-        pprint.pprint(updated_files)
-        pprint.pprint(modified_functions)
 
+        modified_files = get_updated_files(patch)
+
+        patchname = os.path.basename(patchfile)
+        updated_files[patchname] = {
+            "modified_files": modified_files,
+            "modified_functions": modified_functions,
+        }
+
+    with open(args.output, "w") as f:
+        yaml.dump(updated_files, f, default_flow_style=False)
+
+    print(f"Analysis results written to '{args.output}'.")
 if __name__ == "__main__":
     main()
