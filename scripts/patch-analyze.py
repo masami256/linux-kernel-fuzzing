@@ -38,9 +38,15 @@ def extract_function_name(line):
     function_name = function_declaration.split(' ')[-1]
     return function_name
 
-def update_changed_functions(changed_functions, key, function_name):
+def update_changed_functions(changed_functions, key, function_name, added_lines, removed_lines):
     if not function_name in changed_functions[key]:
-        changed_functions[key][function_name] = {}
+        changed_functions[key][function_name] = {
+            "added_lines": added_lines,
+            "removed_lines": removed_lines
+        }
+    else:
+        changed_functions[key][function_name]["added_lines"] += added_lines
+        changed_functions[key][function_name]["removed_lines"] += removed_lines
 
 def get_changed_functions(patch):
     """
@@ -61,8 +67,8 @@ def get_changed_functions(patch):
             function_is_added = False
             function_is_removed = False
 
-            tmp_added_function = None
-            tmp_removed_function = None
+            added_function = None
+            removed_function = None
 
             section_header = hunk.section_header.strip()
             pprint.pprint(f"section header: {section_header}")
@@ -83,11 +89,10 @@ def get_changed_functions(patch):
             # This name might be changed if we face above case.
             function_name = extract_function_name(section_header)
 
-            for patch_line in hunk:
-                modified_lines = 0
-                added_lines = 0
-                removed_lines = 0
+            added_lines = 0
+            removed_lines = 0
 
+            for patch_line in hunk:
                 line = patch_line.value.strip()
                 if patch_line.is_added or patch_line.is_removed:
                     match = FUNCTION_PATTERN.match(line)
@@ -97,35 +102,33 @@ def get_changed_functions(patch):
                         function_name = line.split('(')[0].split()[-1]
                         if patch_line.is_added:
                             function_is_added = True
-                            added_lines += 1
-                            tmp_added_function = function_name
+                            added_function = function_name
                         elif patch_line.is_removed:
                             function_is_removed = True
-                            removed_lines += 1
-                            tmp_removed_function = function_name  
-                        elif patch_line.is_modified:
-                            modified_lines += 1
+                            removed_function = function_name
 
                 if patch_line.is_added:
                     modified_type |= IS_ADDED
+                    added_lines += 1
                 elif patch_line.is_removed:
                     modified_type |= IS_REMOVED
+                    removed_lines += 1
 
-            print(f"function_name: {function_name}, modified_type: {modified_type}, function_is_added: {function_is_added}, function_is_removed: {function_is_removed}")
             if modified_type == IS_ADDED and function_is_added:
-                update_changed_functions(changed_functions, "added", function_name)
+                update_changed_functions(changed_functions, "added", function_name, added_lines, removed_lines)
             elif modified_type == IS_REMOVED and function_is_removed:
-                update_changed_functions(changed_functions, "removed", function_name)
+                update_changed_functions(changed_functions, "removed", function_name, added_lines, removed_lines)
             elif modified_type & IS_ADDED or modified_type & IS_REMOVED:
-                if tmp_added_function:
-                    update_changed_functions(changed_functions, "added", tmp_added_function)
+                if added_function:
+                    update_changed_functions(changed_functions, "added", added_function, 1, 0)
                     
-                if tmp_removed_function:
-                    update_changed_functions(changed_functions, "removed", tmp_removed_function)
+                if removed_function:
+                    update_changed_functions(changed_functions, "removed", removed_function, 0, 1)
                 
-                if tmp_added_function is None and tmp_removed_function is None:
-                    update_changed_functions(changed_functions, "modified", function_name)
+                if added_function is None and removed_function is None:
+                    update_changed_functions(changed_functions, "modified", function_name, added_lines, removed_lines)
 
+    # Remove functions that are both added and removed. 
     for removed in changed_functions["removed"]:
         if removed in changed_functions["modified"]:
             del changed_functions["modified"][removed]
