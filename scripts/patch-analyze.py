@@ -30,6 +30,9 @@ def parse_args():
 
     return parser.parse_args()
 
+def is_valid_function_declare_line(line: str):
+    return all(c not in line for c in [";", "-", "="])
+
 def get_updated_files(patch):
     updated_files = []
 
@@ -39,6 +42,8 @@ def get_updated_files(patch):
     return updated_files
 
 def extract_function_name(line):
+    if not is_valid_function_declare_line(line):
+        return "OutOfFunctionScope"
 
     match = FUNCTION_PATTERN.match(line)
     if match:
@@ -48,6 +53,8 @@ def extract_function_name(line):
     return "OutOfFunctionScope"
 
 def extract_function_name_no_return_type(line):
+    if not is_valid_function_declare_line(line):
+        return "OutOfFunctionScope"
 
     match = FUNCTION_PATTERN_NO_RETURN_TYPE.match(line)
     if match:
@@ -115,23 +122,21 @@ def get_changed_functions(patch):
             if function_name == "OutOfFunctionScope":
                 function_name = extract_function_name_no_return_type(section_header)
 
-            print(f"First function name: {function_name}")
-            if not function_name == "num_online_cpus":
-                pass
-
-            print("------------------------------")
-            pprint.pprint("section header: " + section_header)
+            #print("------------------------------")
+            #print(f"First function name: {function_name}")
+            #pprint.pprint("section header: " + section_header)
 
             for patch_line in hunk:
                 added_lines = 0
                 removed_lines = 0
 
                 line = patch_line.value.strip()
-                #print(line)
-                function_name_tmp = extract_function_name(line)
-                if not function_name_tmp == function_name and not function_name_tmp == "OutOfFunctionScope":
-                    print(f"Function name changed to: {function_name_tmp} from {function_name} check1")
-                    function_name = function_name_tmp
+                # At least, ";" is not in the function declaration line.
+                if is_valid_function_declare_line(line):
+                    function_name_tmp = extract_function_name(line)
+                    if not function_name_tmp == function_name and not function_name_tmp == "OutOfFunctionScope":
+                        #print(f"Function name changed to: {function_name_tmp} from {function_name} check1")
+                        function_name = function_name_tmp
 
                 # If patch line is a function declaration.
                 # we need to update the function name to the one extracted from the section header.
@@ -148,10 +153,12 @@ def get_changed_functions(patch):
                     if match:
                         # Patch line contains a function declaration.
                         # We change the function name to the one extracted from the section header.
-                        function_name_tmp = extract_function_name(line) 
-                        if not function_name_tmp == function_name and not function_name_tmp == "OutOfFunctionScope":
-                            print(f"Function name changed to: {function_name_tmp} from {function_name_tmp} check1")
-                            function_name = function_name_tmp
+                        # At least, ";" is not in the function declaration line.
+                        if is_valid_function_declare_line(line):
+                            function_name_tmp = extract_function_name(line) 
+                            if not function_name_tmp == function_name and not function_name_tmp == "OutOfFunctionScope":
+                                #print(f"Function name changed to: {function_name_tmp} from {function_name} check2")
+                                function_name = function_name_tmp
 
                         if patch_line.is_added:
                             function_is_added = True
@@ -163,11 +170,11 @@ def get_changed_functions(patch):
                     if patch_line.is_added:
                         modified_type |= IS_ADDED
                         added_lines += 1
-                        if function_name == "num_online_cpus":
-                            print(f"added line: {line}")
+                        #print(f"Added line: {line}")
                     elif patch_line.is_removed:
                         modified_type |= IS_REMOVED
                         removed_lines += 1
+                        #print(f"Removed line: {line}")
 
                     if modified_type == IS_ADDED and function_is_added:
                         update_changed_functions(patched_file, changed_functions, "added", function_name, added_lines, removed_lines)
@@ -175,19 +182,19 @@ def get_changed_functions(patch):
                         update_changed_functions(patched_file, changed_functions, "removed", function_name, added_lines, removed_lines)
                     elif modified_type & IS_ADDED or modified_type & IS_REMOVED:
                         if added_functions:
-                            update_changed_functions(patched_file, changed_functions, "added", added_functions, 1, 0)
+                            update_changed_functions(patched_file, changed_functions, "added", added_functions, added_lines, removed_lines)
                             
                         if removed_functions:
-                            update_changed_functions(patched_file, changed_functions, "removed", removed_functions, 0, 1)
+                            update_changed_functions(patched_file, changed_functions, "removed", removed_functions, added_lines, removed_lines)
                         
                         if not added_functions and not removed_functions:
                             update_changed_functions(patched_file, changed_functions, "modified", function_name, added_lines, removed_lines)
                 else:
                     pass
                     #print(f"line: {line}")
-                    #if added_lines == 0 and removed_lines == 0:
-                    #    function_name = "OutOfFunctionScope"
-            print("=====================================")
+                    if line.startswith("}"):
+                        function_name = "OutOfFunctionScope"
+            #print("=====================================")
     return changed_functions
 
 def read_patch_file(patchfile):
