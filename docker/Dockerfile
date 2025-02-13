@@ -21,7 +21,8 @@ sudo python3 python3-pip \
 wget debootstrap \
 ninja-build libz3-dev \
 locales file \
-vim jq
+vim jq \
+python3-unidiff
 
 RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
         echo 'LANG="en_US.UTF-8"'>/etc/default/locale && \
