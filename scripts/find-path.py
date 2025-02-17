@@ -7,14 +7,7 @@ import argparse
 import yaml
 from collections import deque
 
-def is_syscall_function(path):
-    return any(path.startswith(prefix) for prefix in [
-        "__ia32_sys_", "__ia32_compat_sys", "__ia32_sys_",
-        "__x64_sys_ia32_", "do_syscall_64", "__x64_sys_", 
-        "do_int80_emulation"
-    ])
-
-def find_shortest_paths(graph, target, max_paths=20):
+def find_shortest_paths(graph, target, max_paths):
     """Find shortest paths leading to the target node using BFS."""
     paths = []
     queue = deque([(target, [target])])  # Queue holds (current_node, path_to_current_node)
@@ -44,7 +37,8 @@ def parse_options():
     parser.add_argument("--func", help="Target function name", metavar="FUNCTION", required=True)
     parser.add_argument("--output", default="paths_output.yml", help="Output file path")
     parser.add_argument("--verbose", help="Show all results (including non-syscall paths)", action="store_true")
-    
+    parser.add_argument("--max-paths", type=int, default=20, help="Maximum number of paths to find")
+
     return parser.parse_args()
 
 def load_graph_from_pickle(pickle_file_path):
@@ -64,11 +58,11 @@ def main():
         print(f"Function '{args.func}' not found in the graph.")
         sys.exit(1)
 
-    paths = find_shortest_paths(call_graph, args.func)
+    paths = find_shortest_paths(call_graph, args.func, args.max_paths)
     
     if paths:
         print(f"Paths to '{args.func}':")
-        paths_arr = [path[::-1] for path in paths if is_syscall_function(path[-1]) or args.verbose]
+        paths_arr = [path[::-1] for path in paths]
         for path in paths_arr:
             print(" -> ".join(path))
         
