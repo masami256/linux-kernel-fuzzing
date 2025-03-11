@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import networkx as nx
+from networkx.readwrite import json_graph
 import matplotlib.pyplot as plt
 import json
 import sys
@@ -8,14 +9,18 @@ import glob
 import os
 import pickle
 
-def save_graph(graph, output_path_pickle):
+def save_graph(graph, output_path_file_name):
     """Save the graph in Pickle format."""
     try:
         # Save as Pickle
-        with open(output_path_pickle, 'wb') as f:
+        with open(output_path_file_name + ".pkl", 'wb') as f:
             pickle.dump(graph, f)
-        print(f"Graph saved as Pickle: {output_path_pickle}")
 
+        data = json_graph.node_link_data(graph)
+        with open(output_path_file_name + ".json", "w") as f:
+            json.dump(data, f, indent=4)
+
+        print(f"Graph saved as Pickle and JSON")
     except Exception as e:
         print(f"Error saving the graph: {e}")
 
